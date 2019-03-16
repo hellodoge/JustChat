@@ -14,10 +14,14 @@ public class Server {
 	private volatile LinkedList<ClientOfServer> clients = new LinkedList<>();
 	private volatile Queue<DatagramPacket> packets = new LinkedList<>();
 	private volatile boolean serverIsRunning = false;
+	private final int timeout;
+	private final int timeoutKick;
 
 	Server (ServerConfiguration serverConfiguration) {
 		this.port = serverConfiguration.getPort();
 		this.name = serverConfiguration.getName();
+		this.timeout = serverConfiguration.getTimeout();
+		this.timeoutKick = serverConfiguration.getTimeoutKick();
 		try {
 			this.socket = new DatagramSocket(this.port);
 		} catch (SocketException e) {
@@ -42,7 +46,19 @@ public class Server {
 			@Override
 			public void run() {
 				do {
-					//TODO Thread receive
+					for (int i = 0; i < clients.size(); i++) {
+						ClientOfServer client = clients.get(i);
+						if (!client.isConnected()) continue;
+						if (System.currentTimeMillis() - client.getLastAccessed() > (long) timeoutKick) {
+							addMessage(messenger.network.Protocol.setTypePacketMessage(client.getName() + " disconnected"));
+							client.connected(false);
+						} else if (System.currentTimeMillis() - client.getLastAccessed() > (long) timeout){
+							messenger.network.Protocol.sendPing(socket, client.getIp(), client.getPort());
+						}
+						try {
+							Thread.sleep(2000);
+						} catch (Exception e) {}
+					}
 				} while (serverIsRunning);
 			}
 		}, "ServerManageThread");
@@ -70,9 +86,23 @@ public class Server {
 		String dataString = new String(packet.getData());
 		messenger.network.Protocol.TypesOfPackets typeOfPacket;
 		typeOfPacket = messenger.network.Protocol.getPacketType(packet);
+		ClientOfServer client = findClient(packet);
+		if (client != null) {
+			client.setLastAccessed(System.currentTimeMillis());
+			if (!client.isConnected()) {
+				client.connected(true);
+				addMessage(messenger.network.Protocol.setTypePacketMessage(client.getName() + " connected"));
+			}
+		}
 		switch (typeOfPacket) {
 			case NAME:
-				clients.add(new ClientOfServer(packet.getAddress(), packet.getPort(), dataString.substring(2)));
+				if (isConnected(packet)) {
+					client.setName(dataString.substring(2));
+				} else {
+					clients.add(new ClientOfServer(packet.getAddress(), packet.getPort(), dataString.substring(2)));
+					byte[] content = new String(messenger.network.Protocol.setTypePacketMessage(findClient(packet).getName() + " joined")).getBytes();
+					messages.add(new DatagramPacket(content, content.length, packet.getAddress(), packet.getPort()));
+				}
 				byte[] content = messenger.network.Protocol.setTypePacketName(name).getBytes();
 				packets.add(new DatagramPacket(content, content.length, packet.getAddress(), packet.getPort()));
 				break;
@@ -82,26 +112,46 @@ public class Server {
 		}
 	}
 
+	private boolean isConnected(DatagramPacket packet) {
+		for (ClientOfServer client : clients) {
+			if (client.getIp().equals(packet.getAddress()) && client.getPort() == packet.getPort()) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	private ClientOfServer findClient(DatagramPacket packet) {
+		for (ClientOfServer client : clients) {
+			if (client.getIp().equals(packet.getAddress()) && client.getPort() == packet.getPort()) {
+				return client;
+			}
+		}
+		return null;
+	}
+
 	private void messageHandler() {
 		messageHandler = new Thread(new Runnable() {
 			@Override
 			public void run() {
 				do {
 					if (!messages.isEmpty()) {
-						DatagramPacket parentPacket = messages.remove();
+						DatagramPacket parentPacket;
+						try {
+							parentPacket = messages.remove();
+						} catch (Exception e) {
+							continue;
+						}
 						String dataString = new String(parentPacket.getData());
 						for (ClientOfServer client : clients) {
 							if (parentPacket.getAddress().equals(client.getIp()) && parentPacket.getPort() == client.getPort()) {
-								//TODO поправить этот ужас
-								String clientName = client.getName();
-								int clientNameLen = clientName.length();
-								clientName = clientName.substring(0,100);
-								dataString = (char)27 + "[31m" + name + "@" + clientName + ": " + (char)27 + "[37m" + dataString.substring(2);
+								dataString = (char)27 + "[31m" + name + "@" + client.getName() + ": " + (char)27 + "[37m" + dataString.substring(2);
 								dataString = messenger.network.Protocol.setTypePacketMessage(dataString);
 								break;
 							}
 						}
 						for (ClientOfServer client : clients) {
+							if (!client.isConnected()) continue;
 							if (parentPacket.getAddress().equals(client.getIp()) && parentPacket.getPort() == client.getPort()) continue;
 							DatagramPacket packet = new DatagramPacket(dataString.getBytes(), dataString.getBytes().length, client.getIp(), client.getPort());
 							try {
@@ -157,12 +207,14 @@ public class Server {
 
 	protected void printClients() {
 		for (ClientOfServer client : clients) {
+			if (!client.isConnected()) continue;
 			System.out.println(client.getIp().toString().substring(1) + " PORT: " + client.getPort() + " LOGIN: " + client.getName() + " ID: " + client.getId());
 		}
 	}
 
 	public void shutDown() {
 		this.serverIsRunning = false;
+		this.manage.interrupt();
 		this.socket.close();
 	}
 	public void addMessage(String message) {

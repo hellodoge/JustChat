@@ -60,6 +60,7 @@ public class ClientMain {
 		do {
 			client.printConsolePrefix();
 			String currentCommand = systemStrInput.nextLine();
+			if (currentCommand.isEmpty()) continue;
 			if (currentCommand.indexOf("$") != 0) {
 				client.addMessage(messenger.network.Protocol.setTypePacketMessage(currentCommand));
 			} else {

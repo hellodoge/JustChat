@@ -1,6 +1,9 @@
 package messenger.network;
 
+import java.io.IOException;
 import java.net.DatagramPacket;
+import java.net.DatagramSocket;
+import java.net.InetAddress;
 
 public class Protocol {
 	public enum TypesOfPackets {
@@ -19,6 +22,8 @@ public class Protocol {
 				return TypesOfPackets.NAME;
 			case idPrefix:
 				return TypesOfPackets.ID;
+			case pingPrefix:
+				return TypesOfPackets.PING;
 			default:
 				return TypesOfPackets.UNDEFINED;
 		}
@@ -33,7 +38,9 @@ public class Protocol {
 	public static String setTypePacketId(String content) {
 		return idPrefix + content;
 	}
-	public static String getPing() {
-		return pingPrefix;
+	public static void sendPing(DatagramSocket socket, InetAddress ip, int port) {
+		try {
+			socket.send(new DatagramPacket(pingPrefix.getBytes(), pingPrefix.getBytes().length, ip, port));
+		} catch (IOException e) {}
 	}
 }

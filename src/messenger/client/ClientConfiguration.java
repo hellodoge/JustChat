@@ -7,6 +7,7 @@ public class ClientConfiguration {
 	private int port = 8080;
 	private String name = "Anonymous";
 	private InetAddress ip = null;
+	private int nameLen = name.length();
 
 	public void setPort(int port) {
 		this.port = port;

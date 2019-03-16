@@ -35,7 +35,7 @@ public class Client {
 			@Override
 			public void run() {
 				clientIsRunning = true;
-				messageQueue.add(messenger.network.Protocol.setTypePacketName(name));
+				messageQueue.add(messenger.network.Protocol.setTypePacketName(name + " " + name.length() + " "));
 				packetSender();
 				packetListener();
 			}
@@ -90,6 +90,9 @@ public class Client {
 			case MESSAGE:
 				System.out.println("\n" + dataString.substring(2));
 				printConsolePrefix();
+				break;
+			case PING:
+				messenger.network.Protocol.sendPing(socket,ip,port);
 				break;
 		}
 	}
