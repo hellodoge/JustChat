@@ -5,6 +5,7 @@ public class ServerConfiguration {
 	private String name = "default";
 	private int timeout = 5000;
 	private int timeoutKick = 15000;
+	private String password = null;
 
 	public void setPort(int port) {
 		this.port = port;
@@ -36,5 +37,13 @@ public class ServerConfiguration {
 
 	public void setTimeoutKick(int timeoutKick) {
 		this.timeoutKick = timeoutKick;
+	}
+
+	public String getPassword() {
+		return password;
+	}
+
+	public void setPassword(String password) {
+		this.password = password;
 	}
 }

@@ -36,6 +36,9 @@ public class Client {
 			public void run() {
 				clientIsRunning = true;
 				messageQueue.add(messenger.network.Protocol.setTypePacketName(name + " " + name.length() + " "));
+				if (configuration.getPassword() != null) {
+					messageQueue.add(messenger.network.Protocol.setTypePacketPassword(configuration.getPassword()));
+				}
 				packetSender();
 				packetListener();
 			}

@@ -1,5 +1,7 @@
 package messenger.server;
 
+import messenger.network.Protocol;
+
 import java.io.IOException;
 import java.net.*;
 import java.util.LinkedList;
@@ -16,12 +18,14 @@ public class Server {
 	private volatile boolean serverIsRunning = false;
 	private final int timeout;
 	private final int timeoutKick;
+	private String password;
 
 	Server (ServerConfiguration serverConfiguration) {
 		this.port = serverConfiguration.getPort();
 		this.name = serverConfiguration.getName();
 		this.timeout = serverConfiguration.getTimeout();
 		this.timeoutKick = serverConfiguration.getTimeoutKick();
+		this.password = serverConfiguration.getPassword();
 		try {
 			this.socket = new DatagramSocket(this.port);
 		} catch (SocketException e) {
@@ -94,20 +98,33 @@ public class Server {
 				addMessage(messenger.network.Protocol.setTypePacketMessage(client.getName() + " connected"));
 			}
 		}
+		if (client != null && !client.isAccessIsAllowed() && typeOfPacket != Protocol.TypesOfPackets.PASSWORD) return;
 		switch (typeOfPacket) {
 			case NAME:
 				if (isConnected(packet)) {
 					client.setName(dataString.substring(2));
 				} else {
 					clients.add(new ClientOfServer(packet.getAddress(), packet.getPort(), dataString.substring(2)));
-					byte[] content = new String(messenger.network.Protocol.setTypePacketMessage(findClient(packet).getName() + " joined")).getBytes();
-					messages.add(new DatagramPacket(content, content.length, packet.getAddress(), packet.getPort()));
+					client = findClient(packet);
+					if (password == null) client.setAccessIsAllowed(true);
+					if (client.isAccessIsAllowed()) {
+						byte[] content = new String(messenger.network.Protocol.setTypePacketMessage(findClient(packet).getName() + " joined")).getBytes();
+						messages.add(new DatagramPacket(content, content.length, packet.getAddress(), packet.getPort()));
+					}
 				}
 				byte[] content = messenger.network.Protocol.setTypePacketName(name).getBytes();
 				packets.add(new DatagramPacket(content, content.length, packet.getAddress(), packet.getPort()));
 				break;
 			case MESSAGE:
 				messages.add(packet);
+				break;
+			case PASSWORD:
+				if (client == null) return;
+				if (password.equals(dataString.substring(2, password.length() + 2))){
+					client.setAccessIsAllowed(true);
+					byte[] lcontent = new String(messenger.network.Protocol.setTypePacketMessage(findClient(packet).getName() + " joined")).getBytes();
+					messages.add(new DatagramPacket(lcontent, lcontent.length, packet.getAddress(), packet.getPort()));
+				}
 				break;
 		}
 	}
@@ -152,6 +169,7 @@ public class Server {
 						}
 						for (ClientOfServer client : clients) {
 							if (!client.isConnected()) continue;
+							if (!client.isAccessIsAllowed()) continue;
 							if (parentPacket.getAddress().equals(client.getIp()) && parentPacket.getPort() == client.getPort()) continue;
 							DatagramPacket packet = new DatagramPacket(dataString.getBytes(), dataString.getBytes().length, client.getIp(), client.getPort());
 							try {
@@ -208,7 +226,7 @@ public class Server {
 	protected void printClients() {
 		for (ClientOfServer client : clients) {
 			if (!client.isConnected()) continue;
-			System.out.println(client.getIp().toString().substring(1) + " PORT: " + client.getPort() + " LOGIN: " + client.getName() + " ID: " + client.getId());
+			System.out.println(client.getIp().toString().substring(1) + " PORT: " + client.getPort() + " LOGIN: " + client.getName() + " ID: " + client.getId() + " " + (client.isAccessIsAllowed() ? "YES" : "NO"));
 		}
 	}
 

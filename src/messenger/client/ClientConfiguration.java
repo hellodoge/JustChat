@@ -7,7 +7,7 @@ public class ClientConfiguration {
 	private int port = 8080;
 	private String name = "Anonymous";
 	private InetAddress ip = null;
-	private int nameLen = name.length();
+	private String password = null;
 
 	public void setPort(int port) {
 		this.port = port;
@@ -36,5 +36,13 @@ public class ClientConfiguration {
 
 	public InetAddress getIp() {
 		return ip;
+	}
+
+	public String getPassword() {
+		return password;
+	}
+
+	public void setPassword(String password) {
+		this.password = password;
 	}
 }

@@ -9,7 +9,7 @@ public class ServerMain {
 
 	public static void mainMethod(String[] args) {
 		server = new Server(configServerFromArgs(args));
-		System.out.println("Starting JustChat Server 1.10 at " + (String) new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date()));
+		System.out.println("Starting JustChat Server 1.10 at " + new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date()));
 		consoleControl();
 	}
 	private static void consoleControl() {
@@ -79,6 +79,13 @@ public class ServerMain {
 							messenger.Application.configProblems("Server name not found");
 						} else {
 							serverConfiguration.setName(args[i+1]);
+						}
+						break;
+					case "--pass":
+						if (i+1 >= args.length) {
+							messenger.Application.configProblems("Password not found");
+						} else {
+							serverConfiguration.setPassword(args[i+1]);
 						}
 						break;
 					default:

@@ -9,7 +9,7 @@ public class ClientMain {
 
 	public static void mainMethod(String[] args) {
 		client = new Client(configClientFromArgs(args));
-		System.out.println("Starting JustChat Client 1.10 at " + (String) new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date()));
+		System.out.println("Starting JustChat Client 1.10 at " + new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date()));
 		consoleControl();
 	}
 	private static ClientConfiguration configClientFromArgs(String[] args) {
@@ -41,6 +41,13 @@ public class ClientMain {
 							System.exit(1);
 						} else {
 							clientConfiguration.setPort(Integer.parseInt(args[i + 1]));
+						}
+						break;
+					case "--pass":
+						if (i+1 >= args.length) {
+							messenger.Application.configProblems("Password not found");
+						} else {
+							clientConfiguration.setPassword(args[i+1]);
 						}
 						break;
 					default:
