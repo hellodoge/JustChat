@@ -7,7 +7,7 @@ public class ClientOfServer {
 	private InetAddress ip;
 	private int port;
 	private final int id;
-	private static int idCounter = 0;
+	private static int idCounter = 1;
 	private String name;
 	private long lastAccessed;
 	private boolean connected;

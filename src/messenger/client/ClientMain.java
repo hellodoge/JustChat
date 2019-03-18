@@ -75,6 +75,9 @@ public class ClientMain {
 					case "$exit":
 						client.shutDown();
 						break;
+					case "$online":
+						messenger.network.Protocol.sendClientsListRequest(client.getSocket(), client.getIp(), client.getPort());
+						break;
 					default:
 						System.out.println("Unrecognized option '" + currentCommand +"'");
 				}

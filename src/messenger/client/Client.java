@@ -110,6 +110,18 @@ public class Client {
 		this.clientIsRunning = false;
 		this.socket.close();
 	}
+	protected DatagramSocket getSocket() {
+		return socket;
+	}
+
+	public int getPort() {
+		return port;
+	}
+
+	public InetAddress getIp() {
+		return ip;
+	}
+
 	protected String getName() {
 		return name;
 	}

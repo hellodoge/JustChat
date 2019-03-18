@@ -125,6 +125,15 @@ public class Server {
 					byte[] lcontent = new String(messenger.network.Protocol.setTypePacketMessage(findClient(packet).getName() + " joined")).getBytes();
 					messages.add(new DatagramPacket(lcontent, lcontent.length, packet.getAddress(), packet.getPort()));
 				}
+			case CLIENTS_LIST:
+				StringBuilder message = new StringBuilder();
+				for (ClientOfServer current_client : clients) {
+					if (current_client.isAccessIsAllowed() && current_client.isConnected()) {
+						message.append(new String(current_client.getId() + ". " + current_client.getName() + "\n"));
+					}
+				}
+				byte[] lcontent = messenger.network.Protocol.setTypePacketMessage(message.toString().substring(0, message.length() - 1)).getBytes();
+				packets.add(new DatagramPacket(lcontent, lcontent.length, packet.getAddress(), packet.getPort()));
 				break;
 		}
 	}
