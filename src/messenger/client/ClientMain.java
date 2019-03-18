@@ -71,15 +71,23 @@ public class ClientMain {
 			if (currentCommand.indexOf("$") != 0) {
 				client.addMessage(messenger.network.Protocol.setTypePacketMessage(currentCommand));
 			} else {
-				switch (currentCommand) {
+				String[] commands = currentCommand.split(" ");
+				switch (commands[0]) {
 					case "$exit":
 						client.shutDown();
 						break;
 					case "$online":
 						messenger.network.Protocol.sendClientsListRequest(client.getSocket(), client.getIp(), client.getPort());
 						break;
+					case "$private":
+						if (commands.length < 3 || !commands[1].matches("\\d+")) {
+							System.out.println("Usage: $private [id] [message]");
+						} else {
+							messenger.network.Protocol.sendPrivateMessage(client.getSocket(), client.getIp(), client.getPort(), currentCommand.substring(commands[0].length() + commands[1].length() + 2), Integer.parseInt(commands[1]));
+						}
+						break;
 					default:
-						System.out.println("Unrecognized option '" + currentCommand +"'");
+						System.out.println("Unrecognized option '" + commands[0] +"'");
 				}
 			}
 		} while (client.isClientIsRunning());

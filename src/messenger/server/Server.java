@@ -125,6 +125,7 @@ public class Server {
 					byte[] lcontent = new String(messenger.network.Protocol.setTypePacketMessage(findClient(packet).getName() + " joined")).getBytes();
 					messages.add(new DatagramPacket(lcontent, lcontent.length, packet.getAddress(), packet.getPort()));
 				}
+				break;
 			case CLIENTS_LIST:
 				StringBuilder message = new StringBuilder();
 				for (ClientOfServer current_client : clients) {
@@ -134,6 +135,18 @@ public class Server {
 				}
 				byte[] lcontent = messenger.network.Protocol.setTypePacketMessage(message.toString().substring(0, message.length() - 1)).getBytes();
 				packets.add(new DatagramPacket(lcontent, lcontent.length, packet.getAddress(), packet.getPort()));
+				break;
+			case PRIVATE_MESSAGE:
+				if (client == null) return;
+				dataString = dataString.substring(2);
+				int separator = dataString.indexOf(Protocol.separator);
+				if (!dataString.substring(0,separator).matches("\\d+")) return;
+				int id = Integer.parseInt(dataString.substring(0,separator));
+				if (clients.size() < id || id <= 0) return;
+				ClientOfServer receiver = clients.get(id - 1);
+				if (!receiver.isAccessIsAllowed() || !receiver.isConnected()) return;
+				byte[] rcontent = Protocol.setTypePacketMessage(new String((char)27 + "[34m" + name + "@" + client.getName() + (char)27 + "[34m" + ": " + dataString.substring(separator + 1))).getBytes();
+				packets.add(new DatagramPacket(rcontent, rcontent.length, receiver.getIp(), receiver.getPort()));
 				break;
 		}
 	}
