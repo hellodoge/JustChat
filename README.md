@@ -10,7 +10,6 @@
 ## @TODO:
 
 - To create help messages
-- To realize client ping probes
 - To rewrite "wrong argument" message
 
 ## Contact with me

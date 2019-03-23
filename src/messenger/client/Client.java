@@ -13,8 +13,10 @@ public class Client {
 	private String name;
 	private InetAddress ip;
 	private DatagramSocket socket;
-	private Thread clientRun, packetSender, packetListener;
+	private Thread clientRun, packetSender, packetListener, manage;
 	private volatile boolean clientIsRunning = false;
+	private volatile long lastAccessed;
+	private final int timeout;
 
 	private volatile Queue <String> messageQueue = new LinkedList<>();
 
@@ -25,6 +27,8 @@ public class Client {
 		this.ip = configuration.getIp();
 		this.serverName = configuration.getIp().toString();
 		this.name = configuration.getName();
+		this.timeout = configuration.getTimeout();
+		this.lastAccessed = System.currentTimeMillis();
 		try {
 			this.socket = new DatagramSocket();
 		} catch (SocketException e) {
@@ -41,6 +45,7 @@ public class Client {
 				}
 				packetSender();
 				packetListener();
+				manage();
 			}
 		}, "ServerRunThread");
 		this.clientRun.start();
@@ -63,7 +68,7 @@ public class Client {
 					}
 				} while (clientIsRunning);
 			}
-		}, "packetSenderThread");
+		}, "PacketSenderThread");
 		this.packetSender.start();
 	}
 	private void packetListener() {
@@ -82,10 +87,37 @@ public class Client {
 		}, "PacketHandlerThread");
 		packetListener.start();
 	}
+	private void manage() {
+		manage = new Thread(new Runnable() {
+			@Override
+			public void run() {
+				do {
+					if (System.currentTimeMillis() - lastAccessed > 4500) {
+						if (System.currentTimeMillis() - lastAccessed > timeout) {
+							System.out.println("\nDISCONNECTED. PRESS ENTER...");
+							shutDown();
+						} else {
+							messenger.network.Protocol.sendClientPing(socket, ip, port);
+							try {
+								Thread.sleep(1500);
+							} catch (InterruptedException e) {}
+						}
+					} else {
+						try {
+							Thread.sleep(1500);
+						} catch (InterruptedException e) {}
+					}
+				} while (clientIsRunning);
+			}
+		}, "ManageThread");
+		manage.start();
+	}
 	private void packetHandler(DatagramPacket packet) {
 		String dataString = new String(packet.getData());
 		messenger.network.Protocol.TypesOfPackets typeOfPacket;
 		typeOfPacket = messenger.network.Protocol.getPacketType(packet);
+		if (!ip.equals(packet.getAddress()) || port != packet.getPort()) return;
+		this.lastAccessed = System.currentTimeMillis();
 		switch (typeOfPacket) {
 			case NAME:
 				serverName = dataString.substring(2);
@@ -108,6 +140,7 @@ public class Client {
 	}
 	protected void shutDown() {
 		this.clientIsRunning = false;
+		this.manage.interrupt();
 		this.socket.close();
 	}
 	protected DatagramSocket getSocket() {

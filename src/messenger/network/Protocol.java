@@ -7,7 +7,7 @@ import java.net.InetAddress;
 
 public class Protocol {
 	public enum TypesOfPackets {
-		MESSAGE, NAME, ID, PING, PASSWORD, PRIVATE_MESSAGE, CLIENTS_LIST, UNDEFINED
+		MESSAGE, NAME, ID, PING, CLIENT_PING, PASSWORD, PRIVATE_MESSAGE, CLIENTS_LIST, UNDEFINED
 	}
 	private final static String messagePrefix = "&M";
 	private final static String namePrefix = "&N";
@@ -16,6 +16,7 @@ public class Protocol {
 	private final static String passwordPrefix = "&K";
 	private final static String clientsListPrefix = "&L";
 	private final static String privateMessagePrefix = "&S";
+	private final static String clientPingPrefix = "&p";
 
 	public final static String separator = "&";
 
@@ -35,6 +36,8 @@ public class Protocol {
 				return TypesOfPackets.CLIENTS_LIST;
 			case privateMessagePrefix:
 				return TypesOfPackets.PRIVATE_MESSAGE;
+			case clientPingPrefix:
+				return TypesOfPackets.CLIENT_PING;
 			default:
 				return TypesOfPackets.UNDEFINED;
 		}
@@ -58,6 +61,11 @@ public class Protocol {
 	public static void sendPing(DatagramSocket socket, InetAddress ip, int port) {
 		try {
 			socket.send(new DatagramPacket(pingPrefix.getBytes(), pingPrefix.getBytes().length, ip, port));
+		} catch (IOException e) {}
+	}
+	public static void sendClientPing(DatagramSocket socket, InetAddress ip, int port) {
+		try {
+			socket.send(new DatagramPacket(clientPingPrefix.getBytes(), clientPingPrefix.getBytes().length, ip, port));
 		} catch (IOException e) {}
 	}
 	public static void sendClientsListRequest(DatagramSocket socket, InetAddress ip, int port) {

@@ -148,6 +148,11 @@ public class Server {
 				byte[] rcontent = Protocol.setTypePacketMessage(new String((char)27 + "[34m" + name + "@" + client.getName() + (char)27 + "[34m" + ": " + dataString.substring(separator + 1))).getBytes();
 				packets.add(new DatagramPacket(rcontent, rcontent.length, receiver.getIp(), receiver.getPort()));
 				break;
+			case CLIENT_PING:
+				if (client == null) return;
+				if (!client.isAccessIsAllowed()) return;
+				if (!client.isConnected()) return;
+				messenger.network.Protocol.sendClientPing(socket, client.getIp(), client.getPort());
 		}
 	}
 

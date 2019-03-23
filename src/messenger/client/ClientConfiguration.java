@@ -8,6 +8,7 @@ public class ClientConfiguration {
 	private String name = "Anonymous";
 	private InetAddress ip = null;
 	private String password = null;
+	private int timeout = 10000;
 
 	public void setPort(int port) {
 		this.port = port;
@@ -44,5 +45,13 @@ public class ClientConfiguration {
 
 	public void setPassword(String password) {
 		this.password = password;
+	}
+
+	public int getTimeout() {
+		return timeout;
+	}
+
+	public void setTimeout(int timeout) {
+		this.timeout = timeout;
 	}
 }
